@@ -1,6 +1,7 @@
-import { useCallback, FormEvent, useState } from 'react';
-import { TextField, Box, Button, Typography } from '@mui/material';
+import { useCallback, FormEvent, useState, ChangeEvent } from 'react';
+import { TextField, Box, Button, IconButton } from '@mui/material';
 import { createShortLink } from '../api';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 export default function Home() {
 
@@ -12,7 +13,7 @@ export default function Home() {
         const data = new FormData(currentTarget);
         const value = data.get('text') as string;
 
-        if (value) {
+        if (value && isValidUrl(value)) {
             createShortLink(value).then((res) => {
                 currentTarget.reset();
                 setLink(res);
@@ -37,6 +38,7 @@ export default function Home() {
               alignItems: 'center',
             }}
           >
+            <img src="/favicon.svg" alt="logo" width="100px" style={{borderRadius: '50%', marginTop: '-100px'}}/>
             {
                 link ? <LinkContent link={link} close={close}/> : <InputContent />
             }
@@ -45,23 +47,37 @@ export default function Home() {
 }
 
 const InputContent = () => {
-    return (
-        <>
-            <Typography component="h1" variant="h5" align="center">
-                Paste the URL to be shortened
-            </Typography>
 
-            <Box component="div" sx={{width: '100%', display: 'flex', marginTop: 2}}>
-                <TextField
-                    name="text"
-                    sx={{flex: '1'}}
-                    autoFocus
-                />
-                <Button type="submit" variant="contained" sx={{ marginLeft: '-4px' }} >
-                    Shorten URL
-                </Button>
-            </Box>
-        </>
+    const [helperText, setHelperText] = useState(' ');
+    const [error, setError] = useState(false);
+
+    const changeHandler = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        if (!value || isValidUrl(value)) {
+            setHelperText(' ');
+            setError(false);
+        } else {
+            setHelperText('Invalid url');
+            setError(true);
+        }
+    }, [])
+
+    return (
+        <Box component="div" sx={{width: '100%', height: '110px', display: 'flex', marginTop: 2, alignItems: 'baseline'}}>
+            <TextField
+                name="text"
+                sx={{flex: '1'}}
+                label="Paste the URL to be shortened"
+                variant="standard"
+                error={error}
+                helperText={helperText}
+                onChange={changeHandler}
+                autoFocus
+            />
+            <Button type="submit" variant="text" sx={{ marginLeft: 2 }}>
+                Shorten
+            </Button>
+        </Box>
     );
 }
 
@@ -69,10 +85,25 @@ const LinkContent = ({link, close}: {link: string, close: () => void}) => {
     const copy = useCallback(() => navigator.clipboard.writeText(link), [link]);
 
     return (
-        <Box component="div" sx={{ display: 'flex', marginTop: 2, alignItems: 'baseline'}}>
-            <Button onClick={close} variant="contained">Back</Button>
-            <Button onClick={copy} variant="contained" sx={{ marginLeft: 2, marginRight: 2}}>Copy</Button>
-            <a target='_blank' rel='noreferrer' href={link}>{link}</a>
+        <Box component="div" sx={{width: '100%', height: '110px', display: 'flex', marginTop: 2, alignItems: 'baseline', flexWrap: 'wrap'}}>
+            <TextField
+                name="text"
+                sx={{flex: '1', minWidth: '250px'}}
+                label=" "
+                variant="standard"
+                disabled
+                value={link}
+                helperText=" "
+            />
+            <a target="_blank" rel="noreferrer" href={link}><IconButton title='Open' color="primary"><OpenInNewIcon /></IconButton></a>
+            <div>
+                <Button onClick={copy} variant="text" sx={{ marginRight: 1}}>Copy</Button>
+                <Button onClick={close} variant="text">Back</Button>
+            </div>
         </Box>
     );
+}
+
+function isValidUrl(url: string): boolean {
+    return /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(url);
 }
