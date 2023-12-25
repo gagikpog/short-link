@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('./src/database.js');
 const cors = require('cors');
-const { getKey } = require('./src/utils.js');
+const { getKey, getPageData } = require('./src/utils.js');
 const app = express();
 const HTTP_PORT = 8002;
 
@@ -45,10 +45,12 @@ app.post('/go/create', (req, res) => {
         return res.status(400).json({ error: 'link required' });
     }
 
-    const insert = 'INSERT INTO data (id, link) VALUES (?,?)';
+    const insert = 'INSERT INTO data (id, link, title, img) VALUES (?,?,?,?)';
     const id = getKey();
-    db.run(insert, [id, link]);
-    res.status(200).json({ error: false, id });
+    getPageData(link).then(({ title, img }) => {
+        db.run(insert, [id, link, title, img]);
+        res.status(200).json({ error: false, id });
+    });
 });
 
 app.get('*', (req, res) => {

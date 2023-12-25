@@ -11,6 +11,8 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         db.run(`CREATE TABLE data (
             id TEXT UNIQUE PRIMARY KEY,
             link TEXT,
+            title TEXT,
+            img TEXT,
             count INTEGER DEFAULT 0
             )`,
         (err) => {
